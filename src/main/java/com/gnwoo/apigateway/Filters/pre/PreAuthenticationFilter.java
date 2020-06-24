@@ -4,6 +4,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 import com.gnwoo.apigateway.handler.JWTHandler;
+import com.gnwoo.apigateway.repo.JWTTokenRepo;
 import com.netflix.zuul.context.RequestContext;
 import com.netflix.zuul.ZuulFilter;
 
@@ -11,11 +12,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class AuthenticationFilter extends ZuulFilter {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-    private static Logger log = LoggerFactory.getLogger(AuthenticationFilter.class);
+public class PreAuthenticationFilter extends ZuulFilter {
+
+    private static Logger log = LoggerFactory.getLogger(PreAuthenticationFilter.class);
     @Autowired
     private JWTHandler jwtHandler;
+    @Autowired
+    private JWTTokenRepo jwtTokenRepo;
+
+    private final ArrayList<String> mustFilterList = new ArrayList<>(
+            Arrays.asList("/auth/health")
+    );
 
     @Override
     public String filterType() {
@@ -29,21 +40,26 @@ public class AuthenticationFilter extends ZuulFilter {
 
     @Override
     public boolean shouldFilter() {
-        return true;
+        RequestContext ctx = RequestContext.getCurrentContext();
+        HttpServletRequest request = ctx.getRequest();
+        return mustFilterList.contains(request.getRequestURI());
     }
 
     @Override
     public Object run() {
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
+
         log.info(String.format("API Gateway received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
 
         // TODO: check if the JWT is in Redis
-        String JWT_token = getCookie(request, "JWT");
+        String JWT_signature = getCookie(request, "JWT");
         String uuid = getCookie(request, "uuid");
 
         // verify uuid and JWT
-        if(JWT_token != null && uuid != null && jwtHandler.verifyJWT(Long. parseLong(uuid), JWT_token))
+        // jwtHandler.verifyJWT(Long. parseLong(uuid), JWT_token)
+        //  && jwtTokenRepo.get(Long. parseLong(uuid), JWT_signature) != null
+        if(uuid != null && JWT_signature != null)
         {
             // authenticated, proxy the request to the user service
             ctx.setSendZuulResponse(true);
@@ -54,9 +70,8 @@ public class AuthenticationFilter extends ZuulFilter {
             // invalid, return here
             ctx.setSendZuulResponse(false);
             ctx.setResponseStatusCode(401);
-            ctx.setResponseBody("API Gateway auth failed");
+            ctx.setResponseBody("API Gateway AuthenticationFilter failed");
         }
-
         return null;
     }
 
