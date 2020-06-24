@@ -43,4 +43,19 @@ public class JWTHandler {
             return false;
         }
     }
+
+    public String extract_JWT_signature(String JWT_token)
+    {
+        int dot_cnt = 0;
+        for(int i = 0; i < JWT_token.length(); i++)
+        {
+            if(JWT_token.charAt(i) == '.')
+            {
+                dot_cnt += 1;
+                if(dot_cnt == 2)
+                    return JWT_token.substring(i+1);
+            }
+        }
+        return null;
+    }
 }

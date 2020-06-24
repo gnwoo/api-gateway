@@ -4,18 +4,23 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.gnwoo.apigateway.handler.JWTHandler;
 import com.netflix.util.Pair;
 import com.netflix.zuul.context.RequestContext;
 import com.netflix.zuul.ZuulFilter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class PostLoginFilter extends ZuulFilter {
+
+    @Autowired
+    private JWTHandler jwtHandler;
 
     private static Logger log = LoggerFactory.getLogger(PostLoginFilter.class);
 
@@ -65,27 +70,12 @@ public class PostLoginFilter extends ZuulFilter {
         }
         ctx.put("zuulResponseHeaders", filteredResponseHeaders);
 
-        String JWT_signature = extract_JWT_signature(JWT_token);
+        String JWT_signature = jwtHandler.extract_JWT_signature(JWT_token);
         Cookie JWT_cookie = new Cookie("JWT", JWT_signature);
 //        JWT_cookie.setSecure(true);
 //        JWT_cookie.setHttpOnly(true);
         response.addCookie(JWT_cookie);
 
-        return null;
-    }
-
-    private String extract_JWT_signature(String JWT_token)
-    {
-        int dot_cnt = 0;
-        for(int i = 0; i < JWT_token.length(); i++)
-        {
-            if(JWT_token.charAt(i) == '.')
-            {
-                dot_cnt += 1;
-                if(dot_cnt == 2)
-                    return JWT_token.substring(i+1);
-            }
-        }
         return null;
     }
 
