@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.gnwoo.apigateway.handler.JWTHandler;
+import com.gnwoo.apigateway.repo.JWTTokenRepo;
 import com.netflix.util.Pair;
 import com.netflix.zuul.context.RequestContext;
 import com.netflix.zuul.ZuulFilter;
@@ -21,6 +22,8 @@ public class PostLoginFilter extends ZuulFilter {
 
     @Autowired
     private JWTHandler jwtHandler;
+    @Autowired
+    private JWTTokenRepo jwtTokenRepo;
 
     private static Logger log = LoggerFactory.getLogger(PostLoginFilter.class);
 
@@ -52,6 +55,9 @@ public class PostLoginFilter extends ZuulFilter {
     public Object run() {
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletResponse response = ctx.getResponse();
+
+        // filter JWT token cookie out
+        Long uuid = null;
         String JWT_token = "";
         List<Pair<String, String>> filteredResponseHeaders = new ArrayList<>();
         List<Pair<String, String>> zuulResponseHeaders = ctx.getZuulResponseHeaders();
@@ -59,10 +65,19 @@ public class PostLoginFilter extends ZuulFilter {
         {
             for (Pair<String, String> header : zuulResponseHeaders)
             {
-                if (header.first().equals("Set-Cookie") && header.second().startsWith("JWT"))
+                if (header.first().equals("Set-Cookie"))
                 {
+                    if(header.second().startsWith("JWT"))
+                    {
                         JWT_token = header.second().substring(4);
-                        log.info(JWT_token);
+//                        log.info(JWT_token);
+                    }
+                    if(header.second().startsWith("uuid"))
+                    {
+                        uuid = Long.parseLong(header.second().substring(5));
+                        log.info(String.valueOf(uuid));
+                        filteredResponseHeaders.add(header);
+                    }
                 }
                 else
                     filteredResponseHeaders.add(header);
@@ -70,7 +85,12 @@ public class PostLoginFilter extends ZuulFilter {
         }
         ctx.put("zuulResponseHeaders", filteredResponseHeaders);
 
+        // save uuid, JWT signature and JWT token to Redis
         String JWT_signature = jwtHandler.extract_JWT_signature(JWT_token);
+        jwtTokenRepo.saveJWTToken(uuid, JWT_token);
+        log.info(jwtTokenRepo.getJWTTokenBySignature(uuid, JWT_signature));
+
+        // response with JWT signature in cookie
         Cookie JWT_cookie = new Cookie("JWT", JWT_signature);
 //        JWT_cookie.setSecure(true);
 //        JWT_cookie.setHttpOnly(true);

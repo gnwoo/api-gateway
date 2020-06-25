@@ -1,5 +1,6 @@
 package com.gnwoo.apigateway.repo;
 
+import com.gnwoo.apigateway.handler.JWTHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
@@ -10,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 
 @Repository
 public class JWTTokenRepo {
+    @Autowired
+    private JWTHandler jwtHandler;
     @Autowired
     RedisTemplate<Long, String> redisTemplate;
 
@@ -26,14 +29,19 @@ public class JWTTokenRepo {
         }
     }
 
-    public String get(Long uuid, String JWT_token) {
+    public String getJWTTokenBySignature(Long uuid, String JWT_signature) {
         Long size = redisTemplate.opsForList().size(uuid);
         if (Objects.isNull(size))
             return null;
         List<String> tokens = redisTemplate.opsForList().range(uuid, 0, size);
-        if (Objects.isNull(tokens) || tokens.isEmpty() || !tokens.contains(JWT_token))
+        if (Objects.isNull(tokens) || tokens.isEmpty())
             return null;
-        return tokens.get(tokens.indexOf(JWT_token));
+        for (String token : tokens)
+        {
+            if(jwtHandler.extract_JWT_signature(token).equals(JWT_signature))
+                return token;
+        }
+        return null;
     }
 
     public boolean remove(Long uuid, String JWT_token) {
