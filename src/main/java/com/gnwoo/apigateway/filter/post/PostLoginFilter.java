@@ -47,8 +47,9 @@ public class PostLoginFilter extends ZuulFilter {
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
         String uri = request.getRequestURI();
+        String method = request.getMethod();
         HttpServletResponse response = ctx.getResponse();
-        return mustFilterList.contains(uri) && response.getStatus() == 200;
+        return mustFilterList.contains(uri) && method.equals("POST") && response.getStatus() == 200;
     }
 
     @Override
