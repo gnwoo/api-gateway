@@ -1,8 +1,9 @@
 package com.gnwoo.apigateway;
 
-import com.gnwoo.apigateway.Filters.post.PostLoginFilter;
-import com.gnwoo.apigateway.Filters.pre.PreAuthenticationFilter;
-import com.gnwoo.apigateway.Filters.pre.PreLogoutFilter;
+import com.gnwoo.apigateway.filter.post.PostChangePasswordFilter;
+import com.gnwoo.apigateway.filter.post.PostLoginFilter;
+import com.gnwoo.apigateway.filter.pre.PreAuthenticationFilter;
+import com.gnwoo.apigateway.filter.pre.PreLogoutFilter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
@@ -29,5 +30,10 @@ public class ApiGatewayApplication {
 	@Bean
 	public PostLoginFilter postLoginFilter() {
 		return new PostLoginFilter();
+	}
+
+	@Bean
+	public PostChangePasswordFilter postChangePasswordFilter() {
+		return new PostChangePasswordFilter();
 	}
 }

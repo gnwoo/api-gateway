@@ -1,31 +1,25 @@
-package com.gnwoo.apigateway.Filters.pre;
+package com.gnwoo.apigateway.filter.pre;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-
-import com.gnwoo.apigateway.handler.JWTHandler;
 import com.gnwoo.apigateway.repo.JWTTokenRepo;
-import com.netflix.zuul.context.RequestContext;
 import com.netflix.zuul.ZuulFilter;
-
+import com.netflix.zuul.context.RequestContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
-public class PreAuthenticationFilter extends ZuulFilter {
-
+public class PreLogoutFilter extends ZuulFilter {
     private static Logger log = LoggerFactory.getLogger(PreAuthenticationFilter.class);
-    @Autowired
-    private JWTHandler jwtHandler;
+
     @Autowired
     private JWTTokenRepo jwtTokenRepo;
 
     private final ArrayList<String> mustFilterList = new ArrayList<>(
-            Arrays.asList("/auth/health")
+            Arrays.asList("/auth/logout", "/auth/logout-everywhere")
     );
 
     @Override
@@ -35,7 +29,7 @@ public class PreAuthenticationFilter extends ZuulFilter {
 
     @Override
     public int filterOrder() {
-        return 1;
+        return 2;
     }
 
     @Override
@@ -52,24 +46,38 @@ public class PreAuthenticationFilter extends ZuulFilter {
 
         log.info(String.format("API Gateway received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
 
-        // TODO: check if the JWT is in Redis
+        // remove the JWT is in Redis to logout
+        String request_uri = request.getRequestURI();
         String JWT_signature = getCookie(request, "JWT");
         String uuid = getCookie(request, "uuid");
 
         // verify uuid and JWT
-        if(uuid != null && JWT_signature != null &&
-           jwtTokenRepo.getJWTTokenBySignature(Long. parseLong(uuid), JWT_signature) != null)
+        String JWT_token = jwtTokenRepo.getJWTTokenBySignature(Long.parseLong(uuid), JWT_signature);
+        if(uuid != null && JWT_signature != null && JWT_token != null)
         {
-            // authenticated, proxy the request to the user service
-            ctx.setSendZuulResponse(true);
-            ctx.setResponseStatusCode(200);
+            // if it is a single logout request, only remove the token the request carries
+            if(request_uri.equals("/auth/logout"))
+            {
+                jwtTokenRepo.remove(Long.parseLong(uuid), JWT_token);
+                ctx.setSendZuulResponse(false);
+                ctx.setResponseStatusCode(200);
+                ctx.setResponseBody("API Gateway PreLogout logout OK");
+            }
+            // otherwise, it is a logout everywhere request, remove all this uuid's tokens
+            else
+            {
+                jwtTokenRepo.removeAll(Long.parseLong(uuid));
+                ctx.setSendZuulResponse(false);
+                ctx.setResponseStatusCode(200);
+                ctx.setResponseBody("API Gateway PreLogout logout everywhere OK");
+            }
         }
         else
         {
             // invalid, return here
             ctx.setSendZuulResponse(false);
-            ctx.setResponseStatusCode(401);
-            ctx.setResponseBody("API Gateway AuthenticationFilter failed");
+            ctx.setResponseStatusCode(500);
+            ctx.setResponseBody("API Gateway PreLogout Internal Server Error");
         }
         return null;
     }
@@ -86,5 +94,4 @@ public class PreAuthenticationFilter extends ZuulFilter {
         }
         return null;
     }
-
 }

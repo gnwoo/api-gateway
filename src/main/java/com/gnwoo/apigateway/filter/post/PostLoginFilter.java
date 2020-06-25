@@ -1,4 +1,4 @@
-package com.gnwoo.apigateway.Filters.post;
+package com.gnwoo.apigateway.filter.post;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
