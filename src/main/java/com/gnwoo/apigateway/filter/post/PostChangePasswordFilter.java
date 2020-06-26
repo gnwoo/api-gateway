@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class PostChangePasswordFilter extends ZuulFilter {
@@ -22,10 +21,6 @@ public class PostChangePasswordFilter extends ZuulFilter {
     private JWTTokenRepo jwtTokenRepo;
 
     private static Logger log = LoggerFactory.getLogger(PostLoginFilter.class);
-
-    private final ArrayList<String> mustFilterList = new ArrayList<>(
-            Arrays.asList("/auth/change-password")
-    );
 
     @Override
     public String filterType() {
@@ -42,14 +37,17 @@ public class PostChangePasswordFilter extends ZuulFilter {
         // check if the request needs to be filtered
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
-        String uri = request.getRequestURI();
         HttpServletResponse response = ctx.getResponse();
-        return mustFilterList.contains(uri) && response.getStatus() == 200;
+        return request.getMethod().equals("PUT") && request.getRequestURI().equals("/auth/change-password") &&
+               response.getStatus() == 200;
     }
 
     @Override
     public Object run() {
         RequestContext ctx = RequestContext.getCurrentContext();
+        HttpServletRequest request = ctx.getRequest();
+
+        log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
 
         // filter uuid cookie out
         Long uuid = null;

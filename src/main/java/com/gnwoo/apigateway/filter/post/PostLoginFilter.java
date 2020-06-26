@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class PostLoginFilter extends ZuulFilter {
@@ -26,10 +25,6 @@ public class PostLoginFilter extends ZuulFilter {
     private JWTTokenRepo jwtTokenRepo;
 
     private static Logger log = LoggerFactory.getLogger(PostLoginFilter.class);
-
-    private final ArrayList<String> mustFilterList = new ArrayList<>(
-            Arrays.asList("/auth/login")
-    );
 
     @Override
     public String filterType() {
@@ -46,16 +41,18 @@ public class PostLoginFilter extends ZuulFilter {
         // check if the request needs to be filtered
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
-        String uri = request.getRequestURI();
-        String method = request.getMethod();
         HttpServletResponse response = ctx.getResponse();
-        return mustFilterList.contains(uri) && method.equals("POST") && response.getStatus() == 200;
+        return request.getMethod().equals("POST") && request.getRequestURI().equals("/auth/login") &&
+               response.getStatus() == 200;
     }
 
     @Override
     public Object run() {
         RequestContext ctx = RequestContext.getCurrentContext();
+        HttpServletRequest request = ctx.getRequest();
         HttpServletResponse response = ctx.getResponse();
+
+        log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
 
         // filter JWT token cookie out
         Long uuid = null;

@@ -11,8 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PreAuthenticationFilter extends ZuulFilter {
 
@@ -21,9 +21,9 @@ public class PreAuthenticationFilter extends ZuulFilter {
     @Autowired
     private JWTTokenRepo jwtTokenRepo;
 
-    private final ArrayList<String> mustFilterList = new ArrayList<>(
-            Arrays.asList("/auth/authentication-status")
-    );
+    private final Map<String, String> mustAuthenticatedList = new HashMap<>() {{
+        put("/auth/authentication-status", "GET");
+    }};
 
     @Override
     public String filterType() {
@@ -39,7 +39,7 @@ public class PreAuthenticationFilter extends ZuulFilter {
     public boolean shouldFilter() {
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
-        return mustFilterList.contains(request.getRequestURI());
+        return isInMustAuthenticationList(request);
     }
 
     @Override
@@ -47,20 +47,16 @@ public class PreAuthenticationFilter extends ZuulFilter {
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
 
-        log.info(String.format("API Gateway received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
-
-        // TODO: check if the JWT is in Redis
-        String JWT_signature = getCookie(request, "JWT");
-        String uuid = getCookie(request, "uuid");
+        log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
 
         // verify uuid and JWT
+        String JWT_signature = getCookie(request, "JWT");
+        String uuid = getCookie(request, "uuid");
         if(uuid != null && JWT_signature != null &&
            jwtTokenRepo.getJWTTokenBySignature(Long. parseLong(uuid), JWT_signature) != null)
         {
-            // authenticated, proxy the request to the user service
-            ctx.setSendZuulResponse(false);
-            ctx.setResponseStatusCode(200);
-            ctx.setResponseBody("API Gateway PreAuthenticationFilter OK");
+            // authenticated, route the request to the corresponding service
+            ctx.setSendZuulResponse(true);
         }
         else
         {
@@ -83,6 +79,11 @@ public class PreAuthenticationFilter extends ZuulFilter {
             }
         }
         return null;
+    }
+
+    private boolean isInMustAuthenticationList(HttpServletRequest req) {
+        String method = mustAuthenticatedList.get(req.getRequestURI());
+        return method != null && method.equals(req.getMethod());
     }
 
 }
