@@ -11,7 +11,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 public class PreLogoutFilter extends ZuulFilter {
-    private static Logger log = LoggerFactory.getLogger(PreAuthenticationFilter.class);
+    private static Logger log = LoggerFactory.getLogger(PreLogoutFilter.class);
 
     @Autowired
     private JWTTokenRepo jwtTokenRepo;
@@ -30,7 +30,9 @@ public class PreLogoutFilter extends ZuulFilter {
     public boolean shouldFilter() {
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
-        return request.getMethod().equals("GET") && request.getRequestURI().equals("/auth/logout");
+        return request.getMethod().equals("POST") &&
+               (request.getRequestURI().equals("/auth/logout") ||
+                request.getRequestURI().equals("/auth/logout-everywhere"));
     }
 
     @Override
@@ -40,40 +42,29 @@ public class PreLogoutFilter extends ZuulFilter {
 
         log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
 
-        // remove the JWT is in Redis to logout
+        // get uuid and JWT token, both should not be null here since PreJWTTokenFilter has authenticated them.
         String request_uri = request.getRequestURI();
-        String JWT_signature = getCookie(request, "JWT");
         String uuid = getCookie(request, "uuid");
+        String JWT_signature = getCookie(request, "JWT");
+        String JWT_token = jwtTokenRepo.getJWTTokenBySignature(Long. parseLong(uuid), JWT_signature);
 
-        // verify uuid and JWT
-        String JWT_token;
-        if(uuid != null && JWT_signature != null &&
-           (JWT_token=jwtTokenRepo.getJWTTokenBySignature(Long.parseLong(uuid), JWT_signature)) != null)
+        // if it is a single logout request, only remove the token the request carries
+        if(request_uri.equals("/auth/logout"))
         {
-            // if it is a single logout request, only remove the token the request carries
-            if(request_uri.equals("/auth/logout"))
-            {
-                jwtTokenRepo.remove(Long.parseLong(uuid), JWT_token);
-                ctx.setSendZuulResponse(false);
-                ctx.setResponseStatusCode(200);
-                ctx.setResponseBody("API Gateway PreLogout logout OK");
-            }
-            // otherwise, it is a logout everywhere request, remove all this uuid's tokens
-            else
-            {
-                jwtTokenRepo.removeAll(Long.parseLong(uuid));
-                ctx.setSendZuulResponse(false);
-                ctx.setResponseStatusCode(200);
-                ctx.setResponseBody("API Gateway PreLogout logout everywhere OK");
-            }
+            jwtTokenRepo.remove(Long.parseLong(uuid), JWT_token);
+            ctx.setSendZuulResponse(false);
+            ctx.setResponseStatusCode(200);
+            ctx.setResponseBody("API Gateway PreLogout logout OK");
         }
+        // otherwise, it is a logout everywhere request, remove all this uuid's tokens
         else
         {
-            // invalid, return here
+            jwtTokenRepo.removeAll(Long.parseLong(uuid));
             ctx.setSendZuulResponse(false);
-            ctx.setResponseStatusCode(401);
-            ctx.setResponseBody("API Gateway PreLogoutFilter failed");
+            ctx.setResponseStatusCode(200);
+            ctx.setResponseBody("API Gateway PreLogout logout everywhere OK");
         }
+
         return null;
     }
 

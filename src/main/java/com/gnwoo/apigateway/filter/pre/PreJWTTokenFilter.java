@@ -14,15 +14,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PreAuthenticationFilter extends ZuulFilter {
+public class PreJWTTokenFilter extends ZuulFilter {
 
-    private static Logger log = LoggerFactory.getLogger(PreAuthenticationFilter.class);
+    private static Logger log = LoggerFactory.getLogger(PreJWTTokenFilter.class);
 
     @Autowired
     private JWTTokenRepo jwtTokenRepo;
 
-    private final Map<String, String> mustAuthenticatedList = new HashMap<>() {{
+    private final Map<String, String> mustCheckJWTTokenList = new HashMap<>() {{
         put("/auth/authentication-status", "GET");
+        put("/auth/logout", "POST");
+        put("/auth/logout-everywhere", "POST");
     }};
 
     @Override
@@ -82,7 +84,7 @@ public class PreAuthenticationFilter extends ZuulFilter {
     }
 
     private boolean isInMustAuthenticationList(HttpServletRequest req) {
-        String method = mustAuthenticatedList.get(req.getRequestURI());
+        String method = mustCheckJWTTokenList.get(req.getRequestURI());
         return method != null && method.equals(req.getMethod());
     }
 

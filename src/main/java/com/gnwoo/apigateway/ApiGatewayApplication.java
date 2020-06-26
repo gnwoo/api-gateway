@@ -2,7 +2,7 @@ package com.gnwoo.apigateway;
 
 import com.gnwoo.apigateway.filter.post.PostChangePasswordFilter;
 import com.gnwoo.apigateway.filter.post.PostLoginFilter;
-import com.gnwoo.apigateway.filter.pre.PreAuthenticationFilter;
+import com.gnwoo.apigateway.filter.pre.PreJWTTokenFilter;
 import com.gnwoo.apigateway.filter.pre.PreLogoutFilter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,8 +18,8 @@ public class ApiGatewayApplication {
 	}
 
 	@Bean
-	public PreAuthenticationFilter preAuthenticationFilter() {
-		return new PreAuthenticationFilter();
+	public PreJWTTokenFilter preJWTTokenFilter() {
+		return new PreJWTTokenFilter();
 	}
 
 	@Bean

@@ -16,11 +16,9 @@ import java.util.List;
 
 public class PostChangePasswordFilter extends ZuulFilter {
     @Autowired
-    private JWTHandler jwtHandler;
-    @Autowired
     private JWTTokenRepo jwtTokenRepo;
 
-    private static Logger log = LoggerFactory.getLogger(PostLoginFilter.class);
+    private static Logger log = LoggerFactory.getLogger(PostChangePasswordFilter.class);
 
     @Override
     public String filterType() {

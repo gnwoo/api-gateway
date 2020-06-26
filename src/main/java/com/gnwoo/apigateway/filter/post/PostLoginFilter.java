@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PostLoginFilter extends ZuulFilter {
-
     @Autowired
     private JWTHandler jwtHandler;
     @Autowired
@@ -68,12 +67,10 @@ public class PostLoginFilter extends ZuulFilter {
                     if(header.second().startsWith("JWT"))
                     {
                         JWT_token = header.second().substring(4);
-//                        log.info(JWT_token);
                     }
                     if(header.second().startsWith("uuid"))
                     {
                         uuid = Long.parseLong(header.second().substring(5));
-                        log.info(String.valueOf(uuid));
                         filteredResponseHeaders.add(header);
                     }
                 }
