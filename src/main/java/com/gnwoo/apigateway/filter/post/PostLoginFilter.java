@@ -13,6 +13,7 @@ import com.netflix.zuul.ZuulFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,11 +69,12 @@ public class PostLoginFilter extends ZuulFilter {
                     {
                         JWT_token = header.second().substring(4);
                     }
-                    if(header.second().startsWith("uuid"))
+                    else if(header.second().startsWith("uuid"))
                     {
                         uuid = Long.parseLong(header.second().substring(5));
-                        filteredResponseHeaders.add(header);
                     }
+                    else
+                        filteredResponseHeaders.add(header);
                 }
                 else
                     filteredResponseHeaders.add(header);
@@ -85,11 +87,15 @@ public class PostLoginFilter extends ZuulFilter {
         jwtTokenRepo.saveJWTToken(uuid, JWT_token);
         log.info(jwtTokenRepo.getJWTTokenBySignature(uuid, JWT_signature));
 
-        // response with JWT signature in cookie
+        // response with uuid and JWT signature in cookie
         Cookie JWT_cookie = new Cookie("JWT", JWT_signature);
+        JWT_cookie.setPath("/");
+        Cookie uuid_cookie = new Cookie("uuid", String.valueOf(uuid));
+        uuid_cookie.setPath("/");
 //        JWT_cookie.setSecure(true);
 //        JWT_cookie.setHttpOnly(true);
         response.addCookie(JWT_cookie);
+        response.addCookie(uuid_cookie);
 
         return null;
     }
