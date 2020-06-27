@@ -1,18 +1,17 @@
 package com.gnwoo.apigateway.repo;
 
-import com.gnwoo.apigateway.handler.JWTHandler;
+import com.gnwoo.apigateway.util.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 @Repository
 public class JWTTokenRepo {
     @Autowired
-    private JWTHandler jwtHandler;
+    private JWTUtil jwtUtil;
     @Autowired
     RedisTemplate<Long, String> redisTemplate;
 
@@ -38,7 +37,7 @@ public class JWTTokenRepo {
             return null;
         for (String token : tokens)
         {
-            if(jwtHandler.extract_JWT_signature(token).equals(JWT_signature))
+            if(jwtUtil.extract_JWT_signature(token).equals(JWT_signature))
                 return token;
         }
         return null;

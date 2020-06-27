@@ -22,9 +22,9 @@ public class PreJWTTokenFilter extends ZuulFilter {
     private JWTTokenRepo jwtTokenRepo;
 
     private final Map<String, String> mustCheckJWTTokenList = new HashMap<>() {{
-        put("/auth/authentication-status", "GET");
-        put("/auth/logout", "POST");
-        put("/auth/logout-everywhere", "POST");
+        put("/user/authentication-status", "GET");
+        put("/user/logout", "POST");
+        put("/user/logout-everywhere", "POST");
     }};
 
     @Override

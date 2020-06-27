@@ -4,7 +4,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.gnwoo.apigateway.handler.JWTHandler;
+import com.gnwoo.apigateway.util.JWTUtil;
 import com.gnwoo.apigateway.repo.JWTTokenRepo;
 import com.netflix.util.Pair;
 import com.netflix.zuul.context.RequestContext;
@@ -13,14 +13,13 @@ import com.netflix.zuul.ZuulFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PostLoginFilter extends ZuulFilter {
     @Autowired
-    private JWTHandler jwtHandler;
+    private JWTUtil jwtUtil;
     @Autowired
     private JWTTokenRepo jwtTokenRepo;
 
@@ -42,7 +41,7 @@ public class PostLoginFilter extends ZuulFilter {
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
         HttpServletResponse response = ctx.getResponse();
-        return request.getMethod().equals("POST") && request.getRequestURI().equals("/auth/login") &&
+        return request.getMethod().equals("POST") && request.getRequestURI().equals("/user/login") &&
                response.getStatus() == 200;
     }
 
@@ -83,7 +82,7 @@ public class PostLoginFilter extends ZuulFilter {
         ctx.put("zuulResponseHeaders", filteredResponseHeaders);
 
         // save uuid, JWT signature and JWT token to Redis
-        String JWT_signature = jwtHandler.extract_JWT_signature(JWT_token);
+        String JWT_signature = jwtUtil.extract_JWT_signature(JWT_token);
         jwtTokenRepo.saveJWTToken(uuid, JWT_token);
         log.info(jwtTokenRepo.getJWTTokenBySignature(uuid, JWT_signature));
 

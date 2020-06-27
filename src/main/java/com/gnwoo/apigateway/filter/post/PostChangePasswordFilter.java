@@ -1,6 +1,5 @@
 package com.gnwoo.apigateway.filter.post;
 
-import com.gnwoo.apigateway.handler.JWTHandler;
 import com.gnwoo.apigateway.repo.JWTTokenRepo;
 import com.netflix.util.Pair;
 import com.netflix.zuul.ZuulFilter;
@@ -36,7 +35,7 @@ public class PostChangePasswordFilter extends ZuulFilter {
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
         HttpServletResponse response = ctx.getResponse();
-        return request.getMethod().equals("PUT") && request.getRequestURI().equals("/auth/change-password") &&
+        return request.getMethod().equals("PUT") && request.getRequestURI().equals("/user/change-password") &&
                response.getStatus() == 200;
     }
 

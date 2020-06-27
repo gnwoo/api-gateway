@@ -31,8 +31,8 @@ public class PreLogoutFilter extends ZuulFilter {
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
         return request.getMethod().equals("POST") &&
-               (request.getRequestURI().equals("/auth/logout") ||
-                request.getRequestURI().equals("/auth/logout-everywhere"));
+               (request.getRequestURI().equals("/user/logout") ||
+                request.getRequestURI().equals("/user/logout-everywhere"));
     }
 
     @Override
