@@ -1,23 +1,23 @@
 package com.gnwoo.apigateway.filter.post;
 
-import com.gnwoo.apigateway.repo.JWTTokenRepo;
-import com.netflix.util.Pair;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.Session;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.List;
+import javax.servlet.http.HttpSession;
+import java.util.Map;
 
 public class PostChangePasswordFilter extends ZuulFilter {
-    @Autowired
-    private JWTTokenRepo jwtTokenRepo;
-
     private static Logger log = LoggerFactory.getLogger(PostChangePasswordFilter.class);
+
+    @Autowired
+    private FindByIndexNameSessionRepository<? extends Session> sessions;
 
     @Override
     public String filterType() {
@@ -43,33 +43,17 @@ public class PostChangePasswordFilter extends ZuulFilter {
     public Object run() {
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
+        HttpSession session = request.getSession();
 
         log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
 
-        // filter uuid cookie out
-        Long uuid = null;
-        List<Pair<String, String>> filteredResponseHeaders = new ArrayList<>();
-        List<Pair<String, String>> zuulResponseHeaders = ctx.getZuulResponseHeaders();
-        if (zuulResponseHeaders != null)
-        {
-            for (Pair<String, String> header : zuulResponseHeaders)
-            {
-                if (header.first().equals("Set-Cookie"))
-                {
-                    if(header.second().startsWith("uuid"))
-                    {
-                        uuid = Long.parseLong(header.second().substring(5));
-                        log.info(String.valueOf(uuid));
-                    }
-                }
-                else
-                    filteredResponseHeaders.add(header);
-            }
+        String uuid = (String)session.getAttribute("uuid");
+        Map<String, ? extends Session> sessions = this.sessions.findByPrincipalName(uuid);
+        for (Session s : sessions.values()) {
+            this.sessions.deleteById(s.getId());
         }
-        ctx.put("zuulResponseHeaders", filteredResponseHeaders);
-
-        // once password changed, logout everywhere
-        jwtTokenRepo.removeAll(uuid);
+        session.invalidate();
+        session.setMaxInactiveInterval(0);
 
         return null;
     }

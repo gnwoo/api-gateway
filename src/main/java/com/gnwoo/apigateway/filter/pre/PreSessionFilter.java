@@ -1,25 +1,19 @@
 package com.gnwoo.apigateway.filter.pre;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
-import com.gnwoo.apigateway.repo.JWTTokenRepo;
 import com.netflix.zuul.context.RequestContext;
 import com.netflix.zuul.ZuulFilter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class PreJWTTokenFilter extends ZuulFilter {
-
-    private static Logger log = LoggerFactory.getLogger(PreJWTTokenFilter.class);
-
-    @Autowired
-    private JWTTokenRepo jwtTokenRepo;
+public class PreSessionFilter extends ZuulFilter {
+    private static Logger log = LoggerFactory.getLogger(PreSessionFilter.class);
 
     private final Map<String, String> mustCheckJWTTokenList = new HashMap<>() {{
         put("/user/authentication-status", "GET");
@@ -51,11 +45,9 @@ public class PreJWTTokenFilter extends ZuulFilter {
 
         log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
 
-        // verify uuid and JWT
-        String JWT_signature = getCookie(request, "JWT");
-        String uuid = getCookie(request, "uuid");
-        if(uuid != null && JWT_signature != null &&
-           jwtTokenRepo.getJWTTokenBySignature(Long. parseLong(uuid), JWT_signature) != null)
+        // verify session
+        HttpSession session = request.getSession(false);
+        if(session != null)
         {
             // authenticated, route the request to the corresponding service
             ctx.setSendZuulResponse(true);
@@ -66,19 +58,6 @@ public class PreJWTTokenFilter extends ZuulFilter {
             ctx.setSendZuulResponse(false);
             ctx.setResponseStatusCode(401);
             ctx.setResponseBody("API Gateway PreAuthenticationFilter failed");
-        }
-        return null;
-    }
-
-    private String getCookie(HttpServletRequest req, String name) {
-        Cookie[] cookies = req.getCookies();
-        if(cookies!=null)
-        {
-            for (Cookie cookie : cookies)
-            {
-                if(cookie.getName().equals(name))
-                    return cookie.getValue();
-            }
         }
         return null;
     }

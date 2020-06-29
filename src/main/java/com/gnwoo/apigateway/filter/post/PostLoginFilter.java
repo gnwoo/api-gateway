@@ -1,28 +1,21 @@
 package com.gnwoo.apigateway.filter.post;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
-import com.gnwoo.apigateway.util.JWTUtil;
-import com.gnwoo.apigateway.repo.JWTTokenRepo;
 import com.netflix.util.Pair;
 import com.netflix.zuul.context.RequestContext;
 import com.netflix.zuul.ZuulFilter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.session.FindByIndexNameSessionRepository;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PostLoginFilter extends ZuulFilter {
-    @Autowired
-    private JWTUtil jwtUtil;
-    @Autowired
-    private JWTTokenRepo jwtTokenRepo;
-
     private static Logger log = LoggerFactory.getLogger(PostLoginFilter.class);
 
     @Override
@@ -53,48 +46,22 @@ public class PostLoginFilter extends ZuulFilter {
 
         log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
 
-        // filter JWT token cookie out
+        // get uuid cookie out
         Long uuid = null;
-        String JWT_token = "";
-        List<Pair<String, String>> filteredResponseHeaders = new ArrayList<>();
         List<Pair<String, String>> zuulResponseHeaders = ctx.getZuulResponseHeaders();
         if (zuulResponseHeaders != null)
         {
             for (Pair<String, String> header : zuulResponseHeaders)
             {
-                if (header.first().equals("Set-Cookie"))
-                {
-                    if(header.second().startsWith("JWT"))
-                    {
-                        JWT_token = header.second().substring(4);
-                    }
-                    else if(header.second().startsWith("uuid"))
-                    {
-                        uuid = Long.parseLong(header.second().substring(5));
-                    }
-                    else
-                        filteredResponseHeaders.add(header);
-                }
-                else
-                    filteredResponseHeaders.add(header);
+                if (header.first().equals("Set-Cookie") && header.second().startsWith("uuid"))
+                    uuid = Long.parseLong(header.second().substring(5));
             }
         }
-        ctx.put("zuulResponseHeaders", filteredResponseHeaders);
 
-        // save uuid, JWT signature and JWT token to Redis
-        String JWT_signature = jwtUtil.extract_JWT_signature(JWT_token);
-        jwtTokenRepo.saveJWTToken(uuid, JWT_token);
-        log.info(jwtTokenRepo.getJWTTokenBySignature(uuid, JWT_signature));
-
-        // response with uuid and JWT signature in cookie
-        Cookie JWT_cookie = new Cookie("JWT", JWT_signature);
-        JWT_cookie.setPath("/");
-        Cookie uuid_cookie = new Cookie("uuid", String.valueOf(uuid));
-        uuid_cookie.setPath("/");
-//        JWT_cookie.setSecure(true);
-//        JWT_cookie.setHttpOnly(true);
-        response.addCookie(JWT_cookie);
-        response.addCookie(uuid_cookie);
+        // establish session
+        HttpSession session = request.getSession(true);
+        session.setAttribute(FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, String.valueOf(uuid));
+        session.setAttribute("uuid", String.valueOf(uuid));
 
         return null;
     }

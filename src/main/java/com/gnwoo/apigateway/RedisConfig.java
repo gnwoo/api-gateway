@@ -9,7 +9,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 
 import javax.annotation.PreDestroy;
-import java.util.List;
 
 @Configuration
 @EnableCaching
