@@ -48,7 +48,7 @@ public class PreLogoutFilter extends ZuulFilter {
         String request_uri = request.getRequestURI();
         HttpSession session = request.getSession();
 
-        // if it is a single logout request, only remove the token the request carries
+        // if it is a single logout request, only invalidate and delete this session
         if(request_uri.equals("/user/logout"))
         {
             this.sessions.deleteById(session.getId());
@@ -58,7 +58,7 @@ public class PreLogoutFilter extends ZuulFilter {
             ctx.setResponseStatusCode(200);
             ctx.setResponseBody("API Gateway PreLogout logout OK");
         }
-        // otherwise, it is a logout everywhere request, remove all this uuid's tokens
+        // otherwise, it is a logout everywhere request, invalidate and delete all this uuid's sessions
         else
         {
             String uuid = (String)session.getAttribute("uuid");

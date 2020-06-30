@@ -1,5 +1,6 @@
 package com.gnwoo.apigateway.filter.post;
 
+import com.netflix.util.Pair;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import org.slf4j.Logger;
@@ -11,6 +12,8 @@ import org.springframework.session.Session;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class PostChangePasswordFilter extends ZuulFilter {
@@ -47,8 +50,27 @@ public class PostChangePasswordFilter extends ZuulFilter {
 
         log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
 
-        String uuid = (String)session.getAttribute("uuid");
-        Map<String, ? extends Session> sessions = this.sessions.findByPrincipalName(uuid);
+        // filter uuid cookie out to get uuid
+        Long uuid = null;
+        List<Pair<String, String>> filteredResponseHeaders = new ArrayList<>();
+        List<Pair<String, String>> zuulResponseHeaders = ctx.getZuulResponseHeaders();
+        if (zuulResponseHeaders != null)
+        {
+            for (Pair<String, String> header : zuulResponseHeaders)
+            {
+                if (header.first().equals("Set-Cookie"))
+                {
+                    if(header.second().startsWith("uuid"))
+                        uuid = Long.parseLong(header.second().substring(5));
+                }
+                else
+                    filteredResponseHeaders.add(header);
+            }
+        }
+        ctx.put("zuulResponseHeaders", filteredResponseHeaders);
+
+        // logout everywhere
+        Map<String, ? extends Session> sessions = this.sessions.findByPrincipalName(String.valueOf(uuid));
         for (Session s : sessions.values()) {
             this.sessions.deleteById(s.getId());
         }
