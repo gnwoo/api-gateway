@@ -15,10 +15,9 @@ import java.util.Map;
 public class PreSessionFilter extends ZuulFilter {
     private static Logger log = LoggerFactory.getLogger(PreSessionFilter.class);
 
-    private final Map<String, String> mustCheckJWTTokenList = new HashMap<>() {{
+    private final Map<String, String> mustSessionList = new HashMap<>() {{
         put("/user/authentication-status", "GET");
-        put("/user/logout", "POST");
-        put("/user/logout-everywhere", "POST");
+        put("/user/test", "GET");
     }};
 
     @Override
@@ -57,13 +56,13 @@ public class PreSessionFilter extends ZuulFilter {
             // invalid, return here
             ctx.setSendZuulResponse(false);
             ctx.setResponseStatusCode(401);
-            ctx.setResponseBody("API Gateway PreAuthenticationFilter failed");
+            ctx.setResponseBody("API Gateway PreSessionFilter Unauthorized");
         }
         return null;
     }
 
     private boolean isInMustAuthenticationList(HttpServletRequest req) {
-        String method = mustCheckJWTTokenList.get(req.getRequestURI());
+        String method = mustSessionList.get(req.getRequestURI());
         return method != null && method.equals(req.getMethod());
     }
 
