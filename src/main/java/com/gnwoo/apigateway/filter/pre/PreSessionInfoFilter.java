@@ -48,10 +48,14 @@ public class PreSessionInfoFilter extends ZuulFilter {
         if(session != null)
         {
             String uuid = (String)session.getAttribute("uuid");
+            String current_session_id = session.getId();
+            // put current_session_id in the first position
             List<String> session_id_list = new ArrayList<>();
+            session_id_list.add(current_session_id);
             Map<String, ? extends Session> sessions = this.sessions.findByPrincipalName(uuid);
             for (Session s : sessions.values()) {
-                session_id_list.add(s.getId());
+                if(!s.getId().equals(current_session_id))
+                    session_id_list.add(s.getId());
             }
             String session_id_list_json = new Gson().toJson(session_id_list);
 

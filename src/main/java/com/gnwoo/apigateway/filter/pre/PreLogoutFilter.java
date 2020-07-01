@@ -51,9 +51,8 @@ public class PreLogoutFilter extends ZuulFilter {
         // if it is a single logout request, only invalidate and delete this session
         if(session != null && request_uri.equals("/user/logout"))
         {
-            this.sessions.deleteById(session.getId());
-            session.invalidate();
-            session.setMaxInactiveInterval(0);
+            String session_to_logout_id = request.getHeader("session-to-logout-id");
+            this.sessions.deleteById(session_to_logout_id);
             ctx.setSendZuulResponse(false);
             ctx.setResponseStatusCode(200);
             ctx.setResponseBody("API Gateway PreLogout logout OK");
@@ -66,8 +65,6 @@ public class PreLogoutFilter extends ZuulFilter {
             for (Session s : sessions.values()) {
                 this.sessions.deleteById(s.getId());
             }
-            session.invalidate();
-            session.setMaxInactiveInterval(0);
 
             ctx.setSendZuulResponse(false);
             ctx.setResponseStatusCode(200);
