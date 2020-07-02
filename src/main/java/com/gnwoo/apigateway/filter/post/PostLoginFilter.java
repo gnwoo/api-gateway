@@ -46,7 +46,7 @@ public class PostLoginFilter extends ZuulFilter {
 
         log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
 
-        // filter uuid cookie out to get uuid
+        // filter uuid header out to get uuid
         Long uuid = null;
         List<Pair<String, String>> filteredResponseHeaders = new ArrayList<>();
         List<Pair<String, String>> zuulResponseHeaders = ctx.getZuulResponseHeaders();
@@ -54,11 +54,8 @@ public class PostLoginFilter extends ZuulFilter {
         {
             for (Pair<String, String> header : zuulResponseHeaders)
             {
-                if (header.first().equals("Set-Cookie"))
-                {
-                    if(header.second().startsWith("uuid"))
-                        uuid = Long.parseLong(header.second().substring(5));
-                }
+                if (header.first().equals("uuid"))
+                    uuid = Long.parseLong(header.second());
                 else
                     filteredResponseHeaders.add(header);
             }
