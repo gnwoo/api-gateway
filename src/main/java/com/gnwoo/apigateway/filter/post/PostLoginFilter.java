@@ -66,6 +66,8 @@ public class PostLoginFilter extends ZuulFilter {
         HttpSession session = request.getSession(true);
         session.setAttribute(FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, String.valueOf(uuid));
         session.setAttribute("uuid", String.valueOf(uuid));
+        // session should never be timed out
+        session.setMaxInactiveInterval(-1);
 
         return null;
     }

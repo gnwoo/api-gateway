@@ -18,6 +18,7 @@ public class PreSessionFilter extends ZuulFilter {
 
     private final Map<String, String> mustSessionList = new HashMap<>() {{
         put("/user/authentication-status", "GET");
+        put("/user/user-info", "GET");
         put("/user/change-2FA-status", "POST");
     }};
 

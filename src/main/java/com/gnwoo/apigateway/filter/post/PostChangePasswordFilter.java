@@ -58,11 +58,8 @@ public class PostChangePasswordFilter extends ZuulFilter {
         {
             for (Pair<String, String> header : zuulResponseHeaders)
             {
-                if (header.first().equals("Set-Cookie"))
-                {
-                    if(header.second().startsWith("uuid"))
-                        uuid = Long.parseLong(header.second().substring(5));
-                }
+                if (header.first().equals("uuid"))
+                    uuid = Long.parseLong(header.second());
                 else
                     filteredResponseHeaders.add(header);
             }
