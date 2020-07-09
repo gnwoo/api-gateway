@@ -44,7 +44,8 @@ public class PreSessionFilter extends ZuulFilter {
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
 
-        log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
+        log.info(String.format("[RequestMetrics] RequestMethod: %s, RequestURL: %s, RequestIP: %s.",
+                request.getMethod(), request.getRequestURL(), request.getRemoteAddr()));
 
         // verify session
         HttpSession session = request.getSession(false);

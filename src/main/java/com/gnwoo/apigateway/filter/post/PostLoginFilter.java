@@ -44,7 +44,8 @@ public class PostLoginFilter extends ZuulFilter {
         HttpServletRequest request = ctx.getRequest();
         HttpServletResponse response = ctx.getResponse();
 
-        log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
+        log.info(String.format("[RequestMetrics] RequestMethod: %s, RequestURL: %s, RequestIP: %s.",
+                request.getMethod(), request.getRequestURL(), request.getRemoteAddr()));
 
         // filter uuid header out to get uuid
         Long uuid = null;

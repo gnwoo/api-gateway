@@ -48,7 +48,8 @@ public class PostChangePasswordFilter extends ZuulFilter {
         HttpServletRequest request = ctx.getRequest();
         HttpSession session = request.getSession();
 
-        log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
+        log.info(String.format("[RequestMetrics] RequestMethod: %s, RequestURL: %s, RequestIP: %s.",
+                request.getMethod(), request.getRequestURL(), request.getRemoteAddr()));
 
         // filter uuid cookie out to get uuid
         Long uuid = null;

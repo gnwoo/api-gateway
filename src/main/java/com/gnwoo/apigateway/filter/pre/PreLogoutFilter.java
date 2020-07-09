@@ -43,7 +43,8 @@ public class PreLogoutFilter extends ZuulFilter {
         RequestContext ctx = RequestContext.getCurrentContext();
         HttpServletRequest request = ctx.getRequest();
 
-        log.info(String.format("Received %s request to %s", request.getMethod(), request.getRequestURL().toString()));
+        log.info(String.format("[RequestMetrics] RequestMethod: %s, RequestURL: %s, RequestIP: %s.",
+                request.getMethod(), request.getRequestURL(), request.getRemoteAddr()));
 
         String request_uri = request.getRequestURI();
         HttpSession session = request.getSession(false);
