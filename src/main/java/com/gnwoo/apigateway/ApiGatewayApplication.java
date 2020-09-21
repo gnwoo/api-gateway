@@ -1,10 +1,13 @@
 package com.gnwoo.apigateway;
 
+import com.corundumstudio.socketio.Configuration;
+import com.corundumstudio.socketio.SocketIOServer;
 import com.gnwoo.apigateway.filter.post.PostChangePasswordFilter;
 import com.gnwoo.apigateway.filter.post.PostLoginFilter;
 import com.gnwoo.apigateway.filter.pre.PreSessionFilter;
 import com.gnwoo.apigateway.filter.pre.PreLogoutFilter;
 import com.gnwoo.apigateway.filter.pre.PreSessionInfoFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
@@ -25,6 +28,20 @@ public class ApiGatewayApplication {
 		SpringApplication.run(ApiGatewayApplication.class, args);
 	}
 
+	@Value("${ws-server.host}")
+	private String host;
+
+	@Value("${ws-server.port}")
+	private Integer port;
+
+	@Bean
+	public SocketIOServer socketIOServer() {
+		Configuration config = new Configuration();
+		config.setHostname(host);
+		config.setPort(port);
+		return new SocketIOServer(config);
+	}
+
 	@Bean
 	public CorsFilter corsFilter() {
 		final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -39,6 +56,10 @@ public class ApiGatewayApplication {
 		config.addAllowedMethod("POST");
 		config.addAllowedMethod("DELETE");
 		config.addAllowedMethod("PATCH");
+		config.addExposedHeader("Content-Type");
+		config.addExposedHeader("Authorization");
+		config.addExposedHeader("Accept");
+		config.addExposedHeader("Origin");
 		source.registerCorsConfiguration("/**", config);
 		return new CorsFilter(source);
 	}

@@ -1,7 +1,6 @@
 package com.gnwoo.apigateway.filter.pre;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.netflix.zuul.context.RequestContext;
@@ -20,6 +19,7 @@ public class PreSessionFilter extends ZuulFilter {
         put("/user/authentication-status", "GET");
         put("/user/user-info", "GET");
         put("/user/change-2FA-status", "POST");
+        put("/message/chat-message-sync", "GET");
     }};
 
     @Override
@@ -49,15 +49,12 @@ public class PreSessionFilter extends ZuulFilter {
 
         // verify session
         HttpSession session = request.getSession(false);
-        if(session != null)
-        {
+        if(session != null) {
             // authenticated, route the request to the corresponding service
             String uuid = session.getAttribute("uuid").toString();
             ctx.addZuulRequestHeader("uuid", uuid);
             ctx.setSendZuulResponse(true);
-        }
-        else
-        {
+        } else {
             // invalid, return here
             ctx.setSendZuulResponse(false);
             ctx.setResponseStatusCode(401);

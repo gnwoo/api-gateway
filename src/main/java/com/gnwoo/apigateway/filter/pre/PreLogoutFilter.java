@@ -1,5 +1,8 @@
 package com.gnwoo.apigateway.filter.pre;
 
+import com.corundumstudio.socketio.SocketIOClient;
+import com.gnwoo.apigateway.data.repo.WsCommunicationRepo;
+import com.gnwoo.apigateway.data.repo.WsSessionRepo;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import org.slf4j.Logger;
@@ -18,6 +21,12 @@ public class PreLogoutFilter extends ZuulFilter {
 
     @Autowired
     private FindByIndexNameSessionRepository<? extends Session> sessions;
+
+    @Autowired
+    private WsSessionRepo wsSessionRepo;
+
+    @Autowired
+    private WsCommunicationRepo wsCommunicationRepo;
 
     @Override
     public String filterType() {
@@ -52,6 +61,11 @@ public class PreLogoutFilter extends ZuulFilter {
         // if it is a single logout request, only invalidate and delete this session
         if(session != null && request_uri.equals("/user/logout"))
         {
+            // logout ws session & delete this session's communication info
+            String ws_session_token = "";
+            wsSessionRepo.deleteSessionByToken(ws_session_token);
+
+
             String session_to_logout_id = request.getHeader("session-to-logout-id");
             this.sessions.deleteById(session_to_logout_id);
             ctx.setSendZuulResponse(false);
@@ -79,6 +93,16 @@ public class PreLogoutFilter extends ZuulFilter {
             ctx.setResponseBody("API Gateway PreLogout logout everywhere failed");
         }
 
+        return null;
+    }
+
+    private String getWsSessionFromCookie(String cookies) {
+        String[] cookie_arr = cookies.split("; ");
+        for(String cookie : cookie_arr) {
+            if(cookie.startsWith("WSSESSION=")) {
+                return cookie.substring(10);
+            }
+        }
         return null;
     }
 }

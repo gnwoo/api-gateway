@@ -26,6 +26,15 @@ public class RedisConfig {
         return template;
     }
 
+    @Bean(name="RedisStringLongTemplate")
+    public RedisTemplate<String, Long> redisStringTemplate() {
+        RedisTemplate<String, Long> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+        template.setEnableTransactionSupport(true);
+        template.afterPropertiesSet();
+        return template;
+    }
+
     @PreDestroy
     public void cleanRedis() {
         factory.getConnection()

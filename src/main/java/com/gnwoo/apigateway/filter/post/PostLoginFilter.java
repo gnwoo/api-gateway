@@ -1,15 +1,18 @@
 package com.gnwoo.apigateway.filter.post;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.gnwoo.apigateway.data.repo.WsSessionRepo;
 import com.netflix.util.Pair;
 import com.netflix.zuul.context.RequestContext;
 import com.netflix.zuul.ZuulFilter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.session.FindByIndexNameSessionRepository;
 
 import java.util.ArrayList;
@@ -17,6 +20,9 @@ import java.util.List;
 
 public class PostLoginFilter extends ZuulFilter {
     private static Logger log = LoggerFactory.getLogger(PostLoginFilter.class);
+
+    @Autowired
+    private WsSessionRepo wsSessionRepo;
 
     @Override
     public String filterType() {
@@ -63,7 +69,7 @@ public class PostLoginFilter extends ZuulFilter {
         }
         ctx.put("zuulResponseHeaders", filteredResponseHeaders);
 
-        // establish session
+        // establish http session
         HttpSession session = request.getSession(true);
         session.setAttribute(FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, String.valueOf(uuid));
         session.setAttribute("uuid", String.valueOf(uuid));
@@ -72,6 +78,13 @@ public class PostLoginFilter extends ZuulFilter {
         session.setAttribute("last_update_time", unix_time);
         // session should never be timed out
         session.setMaxInactiveInterval(-1);
+
+        // establish ws session
+        String ws_session_token = wsSessionRepo.establishSession(uuid);
+        Cookie ws_session_cookie = new Cookie("WSSESSION", ws_session_token);
+        ws_session_cookie.setPath("/");
+        ws_session_cookie.setHttpOnly(true);
+        response.addCookie(ws_session_cookie);
 
         return null;
     }
